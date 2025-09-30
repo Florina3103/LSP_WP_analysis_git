@@ -1,5 +1,6 @@
 # Self-organizing map
-# Author: Florina Schalamon
+# Author: Florina Schalamon based on Doan, Q. V. (2021). S-SOM v1.0: A structural self-organizing map algorithm for weather typing (Version V1). Zenodo. https://doi.org/10.5281/zenodo.4437954
+
 #======================
 #%%
 #load necessary packages

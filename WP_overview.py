@@ -18,6 +18,7 @@ import pymannkendall as mk
 
 import xarray_clim
 import matplotlib.patches as mpatches
+from matplotlib.gridspec import GridSpec
 
 # %% Define functions
 
@@ -39,6 +40,16 @@ def correct_timeformat(ds):
     ds["time"] = pd.DatetimeIndex(time)
 
     return ds
+
+def get_season(month):
+    if month in [12, 1, 2]:
+        return 'Winter'
+    elif month in [3, 4, 5]:
+        return 'Spring'
+    elif month in [6, 7, 8]:
+        return 'Summer'
+    else:
+        return 'Autumn'
 
 
 def open_files(year1, year2, path):
@@ -117,8 +128,6 @@ def data_processing(ds):
 
     return slopes, significant_yes_no
 
-
-# from sklearn.linear_model import LinearRegression
 # %%
 # Setting plotting parameters globally for consistency
 params = {
@@ -148,26 +157,47 @@ names = ["UPV", "ILU", "NUK", "QAQ", "TAS"]
 variables = [101]
 years = [1900, 2015]
 
+
 # %% read in 20CRv3 data and process
 
 path_20CR = "/nas/data/raw/noaa/20Cv3/air.2m/"
-period1 = open_20CR(1922, 1932, path_20CR)
-period2 = open_20CR(1993, 2007, path_20CR)
 
-slope1, sig1 = data_processing(period1)
-slope2, sig2 = data_processing(period2)
+# smoothed data
+period1_smoothed = open_20CR(1917, 1937, path_20CR)
+period2_smoothed = open_20CR(1988, 2012, path_20CR)
 
-lon_2d, lat_2d = np.meshgrid(period1.lon, period1.lat)
+#%% 
+#data processing of the 20CRv3 data
 
+
+period1_smoothed = period1_smoothed.rolling(time=5).mean()
+period2_smoothed = period2_smoothed.rolling(time=5).mean()
+
+period1_smoothed = period1_smoothed.sel(time=slice('1922-12-31T00:00:00.000000000','1932-12-31T00:00:00.000000000'))
+period2_smoothed = period2_smoothed.sel(time=slice('1993-12-31T00:00:00.000000000','2007-12-31T00:00:00.000000000'))
+
+slope1_smoothed, sig1_smoothed = data_processing(period1_smoothed)
+slope2_smoothed, sig2_smoothed = data_processing(period2_smoothed)
+
+lon_2d, lat_2d = np.meshgrid(period1_smoothed.lon, period1_smoothed.lat)
 
 # %% read in and process station data
+station_name = "WEG_L"
+path = '/home/flo/LSP_analysis'#os.getcwd()
 df_weg = pd.read_csv(path + f"/Data/AT_20CRv3_{station_name}_daily.csv")
 df_weg["date"] = pd.to_datetime(df_weg["time"])
 df_weg["year"] = df_weg["date"].dt.year
-df_weg_year = df_weg.groupby("year")["AT"].mean()
-at_mean = np.nanmean(df_weg_year[-30:])
+df_weg["month"] = df_weg["date"].dt.month
+df_weg["season"] = df_weg['month'].map(get_season)
+df_weg_year = df_weg.groupby("year")["AT"].mean().reset_index()
+at_mean = np.nanmean(df_weg_year['AT'][-30:])
 at_ano_re_weg = df_weg_year - at_mean
+df_weg_year['AT_ano'] = df_weg_year['AT'] - at_mean
+df_weg_year['AT_ano_smooth'] = df_weg_year["AT_ano"].rolling(window=5, min_periods=1).mean()
 at_ano_re_weg = at_ano_re_weg.rolling(window=5, min_periods=1).mean()
+
+path = "/nas/data/raw/dmi/historical_climate_data_collection_Greenland_updated_until_2020/Monthly/"
+csv_file = "gr_monthly_all_1784_2020.csv"
 
 df = pd.read_csv(path + csv_file, delimiter=";")
 df.iloc[:, 3:16] = df.iloc[:, 3:16].applymap(lambda x: float(str(x).replace(",", ".")))
@@ -194,6 +224,7 @@ for i, station in enumerate(stations):
 
     # Calculate anomaly and apply rolling mean for smoothing
     aws["at_ano"][names[i]] = temp_data["annual"] - at_mean
+    aws[names[i]]['at_ano'] = aws["at_ano"][names[i]]
     aws["at"][names[i]] = (
         temp_data["annual"].rolling(window=window, min_periods=1).mean()
     )
@@ -203,6 +234,7 @@ for i, station in enumerate(stations):
     aws[f"at_diff_{year_window}_years"][names[i]] = (
         temp_data["annual"].diff(year_window) / year_window
     )
+
 
 # Load zonal mean data and process anomalies
 zonal_mean = pd.read_csv(
@@ -249,7 +281,7 @@ polygon1s = mpath.Path(path_in_data_coords.vertices)
 
 colors_hex = ["#443983", "#31688e", "#21918c", "#35b779", "#90d743"]
 line_styles = [":", "--", "-.", "-"]
-label_rean = ["Globe", "Arctic", "Greenland"]
+label_rean = ["Global", "Arctic", "Greenland"]
 
 selected_smooth_columns = smooth_columns  # Add your actual smooth column data
 
@@ -289,16 +321,16 @@ for j, smooth_col in enumerate(selected_smooth_columns):
         linestyle=line_styles[j],
         lw=2.5,
     )
-
 ax_top.plot(
-    at_ano_re_weg.index,
-    at_ano_re_weg,
+    df_weg_year["year"],
+    df_weg_year["AT_ano_smooth"],
     color="#8e2d04",
     lw=2.5,
     zorder=3,
     linestyle=(0, (3, 1, 1, 1, 1, 1)),
     label=station_name,
 )
+
 
 ax_top.text(
     -0.05,
@@ -362,9 +394,9 @@ cb1 = plt.cm.ScalarMappable(cmap="coolwarm", norm=norm)
 # First map panel
 ax1 = fig.add_subplot(gs[1, 0:3], projection=myProj)
 ax1.contourf(
-    period1.lon,
-    period1.lat,
-    slope1,
+    period1_smoothed.lon,
+    period1_smoothed.lat,
+    slope1_smoothed,
     transform=ccrs.PlateCarree(),
     cmap="coolwarm",
     norm=norm,
@@ -394,12 +426,22 @@ ax1.text(
     fontweight="bold",
     color="k",
 )
+ax1.scatter(
+    -51.128333,
+    71.140556,
+    edgecolor="k",
+    s=150,
+    c="green",
+    zorder=14,
+    transform=ccrs.PlateCarree(),
+    label="study site",
+) 
 
 
 cs = ax1.contourf(
-    period1.lon,
-    period1.lat,
-    sig1,
+    period1_smoothed.lon,
+    period1_smoothed.lat,
+    sig1_smoothed,
     1,
     colors="none",
     transform=ccrs.PlateCarree(),
@@ -408,9 +450,9 @@ cs = ax1.contourf(
 
 bx = fig.add_subplot(gs[1, 3:6], projection=myProj)
 bx.contourf(
-    period2.lon,
-    period2.lat,
-    slope2,
+    period2_smoothed.lon,
+    period2_smoothed.lat,
+    slope2_smoothed,
     transform=ccrs.PlateCarree(),
     cmap="coolwarm",
     norm=norm,
@@ -443,13 +485,13 @@ bx.text(
 )
 
 cs = bx.contourf(
-    period1.lon,
-    period1.lat,
-    sig2,
+    period1_smoothed.lon,
+    period1_smoothed.lat,
+    sig2_smoothed,
     1,
     colors="none",
     transform=ccrs.PlateCarree(),
-    hatches=[None, "///"],
+    hatches=[None, ".."],
 )
 
 bx.scatter(
@@ -503,4 +545,4 @@ plt.tight_layout(rect=[0, 0, 0.5, 1])
 
 plt.show()
 
-# %%
+
