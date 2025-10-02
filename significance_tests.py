@@ -127,7 +127,7 @@ def fisherexakt_test(counts1, counts2):
 
 n_clusters = 8
 
-df = pd.read_csv(f'/home/flo/LSP_analysis/Data/SOM_{n_clusters}_ssim_hgt_GRl_1900_2015/bmu_SOM_{n_clusters}_ssim_hgt_GRl_1900_2015.csv', index_col=0)
+df = pd.read_csv(f'.../SOM_{n_clusters}_ssim_hgt_GRl_1900_2015/bmu_SOM_{n_clusters}_ssim_hgt_GRl_1900_2015.csv', index_col=0)
 df['time'] = pd.to_datetime(df['time'])
 df['month'] = df['time'].dt.month
 

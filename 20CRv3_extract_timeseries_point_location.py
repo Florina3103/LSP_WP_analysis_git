@@ -6,7 +6,7 @@ import numpy as np
 
 # %%
 
-reanalysis_folder = "/nas/data/raw/noaa/20Cv3"  
+reanalysis_folder = ".../noaa/20Cv3"  
 
 station_coords = {
     "WEG_L": {"lat": 71.2, "lon": -51.133333, "alt": 940},
@@ -23,7 +23,7 @@ for station in ("WEG_B", "WEG_L"):
     ifiles_mean = [
         f"{reanalysis_folder}/air.2m/air.2m.{year}.nc" for year in range(2014, 2015 + 1)
     ]
-    orog_ncep_file = "/nas/data/raw/noaa/20Cv3/surface.height/hgt.sfc.SI.nc"
+    orog_ncep_file = ".../20Cv3/surface.height/hgt.sfc.SI.nc" # to get surface height
     reana_mean = xr.open_mfdataset(ifiles_mean)["air"]
 
     orog_ncep = xr.open_dataset(orog_ncep_file)["hgt"]
@@ -51,14 +51,14 @@ for station in ("WEG_B", "WEG_L"):
     daily_averages = df.resample("D").mean()
 
     daily_averages.to_csv(
-        "/home/flo/LSP_analysis/Data/20CRv3/AT_20CRv3_{s}_daily.csv".format(s=station)
+        ".../20CRv3/AT_20CRv3_{s}_daily.csv".format(s=station)
     )
 
-    df.to_csv("/home/flo/LSP_analysis/Data/20CRv3/AT_20CRv3_{s}.csv".format(s=station))
+    df.to_csv(".../20CRv3/AT_20CRv3_{s}.csv".format(s=station))
 # %%
 for station in ("WEG_L", "WEG_B"):
     df = pd.read_csv(
-        "/mnt/hdd2/users/florina/AWS/20CRv3/AT_20CRv3_{s}.csv".format(s=station)
+        ".../20CRv3/AT_20CRv3_{s}.csv".format(s=station)
     )
     df.drop(df.columns[[1, 2]], axis=1, inplace=True)
     df.columns = ["date", "AT"]
@@ -67,8 +67,8 @@ for station in ("WEG_L", "WEG_B"):
     daily_averages = df.resample("D").mean()
 
     daily_averages.to_csv(
-        "/mnt/hdd2/users/florina/AWS/20CRv3/AT_20CRv3_{s}_daily.csv".format(s=station)
+        ".../20CRv3/AT_20CRv3_{s}_daily.csv".format(s=station)
     )
 
 
-# %%
+

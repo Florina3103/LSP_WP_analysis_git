@@ -52,29 +52,6 @@ def get_season(month):
         return 'Autumn'
 
 
-def open_files(year1, year2, path):
-    """
-    year1,year2 as int
-    path as str
-    variables as ['str','str',....]
-    """
-
-    data = {}
-    years = get_timespan(year1, year2)
-    for i, year in enumerate(years):
-        ds = xr.open_dataset(
-            path + str(year) + ".nc", decode_times=False
-        )  # vars = variables,
-        ds = correct_timeformat(ds)
-        ds = ds.resample(time="Y").mean("time")
-        data[year] = ds
-        print("MAR data from year " + str(year) + " is loaded.")
-
-    data = xr.concat(list(data.values()), dim="time")
-
-    return data
-
-
 def open_20CR(year1, year2, path):
     """
     year1,year2 as int
@@ -148,10 +125,6 @@ station_name = "WEG_L"
 path = os.getcwd()
 
 
-# File paths and input details
-path = "/nas/data/raw/dmi/historical_climate_data_collection_Greenland_updated_until_2020/Monthly/"
-csv_file = "gr_monthly_all_1784_2020.csv"
-
 stations = [4211, 4221, 4250, 4272, 4360]
 names = ["UPV", "ILU", "NUK", "QAQ", "TAS"]
 variables = [101]
@@ -160,7 +133,7 @@ years = [1900, 2015]
 
 # %% read in 20CRv3 data and process
 
-path_20CR = "/nas/data/raw/noaa/20Cv3/air.2m/"
+path_20CR = ".../noaa/20Cv3/air.2m/"
 
 # smoothed data
 period1_smoothed = open_20CR(1917, 1937, path_20CR)
@@ -183,7 +156,7 @@ lon_2d, lat_2d = np.meshgrid(period1_smoothed.lon, period1_smoothed.lat)
 
 # %% read in and process station data
 station_name = "WEG_L"
-path = '/home/flo/LSP_analysis'#os.getcwd()
+path = os.getcwd()
 df_weg = pd.read_csv(path + f"/Data/AT_20CRv3_{station_name}_daily.csv")
 df_weg["date"] = pd.to_datetime(df_weg["time"])
 df_weg["year"] = df_weg["date"].dt.year
@@ -196,7 +169,7 @@ df_weg_year['AT_ano'] = df_weg_year['AT'] - at_mean
 df_weg_year['AT_ano_smooth'] = df_weg_year["AT_ano"].rolling(window=5, min_periods=1).mean()
 at_ano_re_weg = at_ano_re_weg.rolling(window=5, min_periods=1).mean()
 
-path = "/nas/data/raw/dmi/historical_climate_data_collection_Greenland_updated_until_2020/Monthly/"
+path = ".../historical_climate_data_collection_Greenland_updated_until_2020/Monthly/" # data from Cappelen 2021
 csv_file = "gr_monthly_all_1784_2020.csv"
 
 df = pd.read_csv(path + csv_file, delimiter=";")
@@ -238,10 +211,10 @@ for i, station in enumerate(stations):
 
 # Load zonal mean data and process anomalies
 zonal_mean = pd.read_csv(
-    "/home/flo/LSP_analysis/Data/20CRv3_zonal_mean_yearly.csv", delimiter=","
+    ".../20CRv3_zonal_mean_yearly.csv", delimiter="," 
 )
 for col in zonal_mean.columns[1:]:
-    zonal_mean[col] = zonal_mean[col] - 273.15
+    zonal_mean[col] = zonal_mean[col] 
     zonal_mean[col + "_ano"] = zonal_mean[col] - np.nanmean(zonal_mean[col][-30:])
     zonal_mean[col + "_at"] = (
         zonal_mean[col].rolling(window=window, min_periods=1).mean()

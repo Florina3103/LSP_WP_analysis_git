@@ -87,12 +87,12 @@ station = "WEG_L"
 home_path = os.getcwd()
 
 # Read 20CRv3 data
-df1 = pd.read_csv(f"/home/flo/LSP_analysis/Data/AT_20CRv3_{station}_daily.csv")
+df1 = pd.read_csv(f".../AT_20CRv3_{station}_daily.csv")
 
 # Read SOM data
 df2 = pd.read_csv(
     home_path
-    + "/Data/SOM_8_ssim_hgt_GRl_1900_2015/bmu_SOM_8_ssim_hgt_GRl_1900_2015.csv"
+    + ".../bmu_SOM_8_ssim_hgt_GRl_1900_2015.csv"
 )
 
 # Convert the 'date' column to datetime format

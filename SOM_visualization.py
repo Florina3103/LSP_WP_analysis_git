@@ -6,7 +6,7 @@ import matplotlib as mpl
 import matplotlib.path as mpath
 
 # Define path to SOM dataset
-nc_file = "/home/flo/LSP_analysis/Data/SOM_8_ssim_hgt_GRl_1900_2015/SOM_8_ssim_hgt_GRl_1900_2015"
+nc_file = ".../SOM_8_ssim_hgt_GRl_1900_2015"
 # Open the NetCDF file using xarray
 data = xr.open_dataset(nc_file)
 

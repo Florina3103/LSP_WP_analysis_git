@@ -1,0 +1,7 @@
+domain		ymin	ymax	xmin	xmax
+NH	90	181	0	360
+NH_small	120	181	0	360
+GR	147	176	260	359
+GR_large 145    181	276	10
+GRl 145 181 260 359
+large_GRl 140   181  240    20

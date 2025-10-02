@@ -224,18 +224,7 @@ def average_consecutive_succession_all(df, column):
 def calculate_consecutive_bmu(
     df, method="median", bmu_column="bmu", date_column="date"
 ):
-    """
-    Berechnet den Median oder Max der aufeinanderfolgenden Abfolgen von BMUs über alle Jahre für jeden BMU.
-
-    Parameters:
-    - df: DataFrame, der die Spalten für das Datum und den BMU enthält
-    - method: Berechnungsmethode, entweder 'median' oder 'max'
-    - bmu_column: Der Name der Spalte, die die BMU-Werte enthält
-    - date_column: Der Name der Spalte, die das Datum enthält
-
-    Rückgabe:
-    - result_df: DataFrame mit BMUs als Zeilen und dem Median oder Max der aufeinanderfolgenden BMU-Abfolgen als Werte
-    """
+    
     # Datumsspalte in DateTime umwandeln
     df[date_column] = pd.to_datetime(df[date_column])
 
@@ -305,11 +294,11 @@ pal_hex = pal.as_hex()
 path = os.getcwd()
 
 # Read AT at station from 20CRv3
-df1 = pd.read_csv(path + f"/Data/AT_20CRv3_{station}_daily.csv")
+df1 = pd.read_csv(path + f".../AT_20CRv3_{station}_daily.csv")
 
 # Read the SOM data
 df2 = pd.read_csv(
-    path + "/Data/SOM_8_ssim_hgt_GRl_1900_2015/bmu_SOM_8_ssim_hgt_GRl_1900_2015.csv"
+    path + "/.../bmu_SOM_8_ssim_hgt_GRl_1900_2015.csv"
 )
 
 # Convert the 'date' column to datetime format

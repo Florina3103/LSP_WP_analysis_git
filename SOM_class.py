@@ -204,7 +204,7 @@ class SOM():
      
     def __init__(self,
                  
-                    path = '/mnt/hdd2/users/florina/20CRv3', #path where the input data is found
+                    path = '.../20CRv3', #path where the input data is found
                  
                     domain = "NH", #INPUT which domain should be analysed
 
