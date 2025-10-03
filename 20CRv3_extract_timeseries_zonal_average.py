@@ -1,107 +1,75 @@
-#%%
+# %%
+
+# from scipy.signal import savgol_filter
+import glob
+
+import numpy as np
 import pandas as pd
 import xarray as xr
-import numpy as np
 
 import xarray_clim
 
-#%%
-
-
-def get_timespan(year1, year2):
-    return list(range(year1, year2 + 1))
-
-
-def correct_timeformat(ds):
-    origin = pd.DatetimeIndex(np.array([ds.time.units[13:]]))[0]
-
-    time = []
-    for t in ds.time.values:
-        time.append(
-            datetime.date(origin.year, origin.month, origin.day)
-            + relativedelta(months=int(t))
-        )
-
-    ds["time"] = pd.DatetimeIndex(time)
-
-    return ds
-
-def get_season(month):
-    if month in [12, 1, 2]:
-        return 'Winter'
-    elif month in [3, 4, 5]:
-        return 'Spring'
-    elif month in [6, 7, 8]:
-        return 'Summer'
-    else:
-        return 'Autumn'
-
-
-def open_files(year1, year2, path):
-    """
-    year1,year2 as int
-    path as str
-    variables as ['str','str',....]
-    """
-
-    data = {}
-    years = get_timespan(year1, year2)
-    for i, year in enumerate(years):
-        ds = xr.open_dataset(
-            path + str(year) + ".nc", decode_times=False
-        )  # vars = variables,
-        ds = correct_timeformat(ds)
-        ds = ds.resample(time="Y").mean("time")
-        data[year] = ds
-        print("MAR data from year " + str(year) + " is loaded.")
-
-    data = xr.concat(list(data.values()), dim="time")
-
-    return data
-
-
-def open_20CR(year1, year2, path, limits = [-100, 90, 0, 55]):
-    """
-    year1,year2 as int
-    path as str
-    variables as ['str','str',....]
-    """
-
-    data = {}
-    years = get_timespan(year1, year2)
-
-    for i, year in enumerate(years):
-        ds = xr.open_dataset(path + "air.2m." + str(year) + ".nc")
-        ds = xarray_clim.wrap360_to180(ds)
-        ds = ds.resample(time="Y").mean("time")
-        ds["lat"] = ds["lat"].astype(dtype="float64")
-        ds["lon"] = ds["lon"].astype(dtype="float64")
-        gl = xarray_clim.sellonlatbox(ds, *limits)
-        data[year] = gl
-        print("20CRv3 data from year " + str(year) + " is loaded.")
-
-    data = xr.concat(list(data.values()), dim="time")
-
-    return data
-
 # %%
 
+# load 20CRv3 data to find zonal mean AT anomaly
 
-path_20CR = "/nas/data/raw/noaa/20Cv3/air.2m/"
+path = "/nas/data/raw/noaa/20Cv3/air.2m/"
 
-limit_Greenland = [-75, 85, -6, 58]
-limit_Arctic = [-180, 180, 66.5, 90]
+# Use glob to get a list of all NetCDF files in the folder
+nc_files = glob.glob(f"{path}/air.2m.*.nc")
+nc_files.sort()
 
 year1 = 1900
-year2 = 1901
+year2 = 2015
 
-# smoothed data
-data_20CRv3 = open_20CR(year1, year2, path_20CR, limit_Greenland)
+valid_nc_files = []
+for file in nc_files:
+    file_year = int(file[-7:-3])
+    if year1 <= file_year <= year2:
+        valid_nc_files.append(file)
+# %%
+# loop over each year to get average temperature per year for the globe, NH and Arctic
+global_AT = []
+arctic_AT = []
+gl_AT = []
+years = []
+time = []
 
-for time in data_20CRv3['time']:
-    month = pd.to_datetime(str(time.values)).month
-    season = get_season(month)
-    data_20CRv3['season'] = season
-zonal_average = data_20CRv3['air'].mean(weighted=True, dim='lon')
+for i, file in enumerate(valid_nc_files):
+    # load the data per year
+
+    ds = xr.open_dataset(file)
+    ds = xarray_clim.wrap360_to180(ds)
+    ds = ds.resample(time="Y").mean("time")
+    ds["lat"] = ds["lat"].astype(dtype="float64")
+    ds["lon"] = ds["lon"].astype(dtype="float64")
+    print("file " + file[-7:-3] + " is loaded")
+
+    # select the regions of interest:
+
+    arctic = xarray_clim.sellonlatbox(ds, -180, 90, 179, 66.5)
+    gl = xarray_clim.sellonlatbox(ds, -75, 85, -6, 58)
+    print("regions are selected")
+
+    # calculate the zonal mean AT of each region
+
+    at_g = (ds["air"].weighted(np.cos(np.deg2rad(ds.lat)))).mean(dim=["lon", "lat"])
+    at_arctic = (arctic["air"].weighted(np.cos(np.deg2rad(arctic.lat)))).mean(
+        dim=["lon", "lat"]
+    )
+    at_gl = (gl["air"].weighted(np.cos(np.deg2rad(gl.lat)))).mean(dim=["lon", "lat"])
+    print("yearly zonal mean is calculated")
+
+    global_AT.extend(at_g.values)
+    arctic_AT.extend(at_arctic.values)
+    gl_AT.extend(at_gl.values)
+    time.extend(at_g.time.values)
+
+
+year = list(range(year1, year2 + 1))
+df_zonal_means = pd.DataFrame(
+    {"year": year, "global_AT": global_AT, "arctic_AT": arctic_AT, "gl_AT": gl_AT}
+)
+df_zonal_means.to_csv("20CRv3_zonal_mean_annual.csv", index=False)
 
 # %%

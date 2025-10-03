@@ -211,10 +211,10 @@ for i, station in enumerate(stations):
 
 # Load zonal mean data and process anomalies
 zonal_mean = pd.read_csv(
-    ".../20CRv3_zonal_mean_yearly.csv", delimiter="," 
+    ".../20CRv3_zonal_mean_annual.csv", delimiter=","
 )
 for col in zonal_mean.columns[1:]:
-    zonal_mean[col] = zonal_mean[col] 
+    zonal_mean[col] = zonal_mean[col] -273.15 # convert to degree Celsius
     zonal_mean[col + "_ano"] = zonal_mean[col] - np.nanmean(zonal_mean[col][-30:])
     zonal_mean[col + "_at"] = (
         zonal_mean[col].rolling(window=window, min_periods=1).mean()
